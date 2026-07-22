@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>JS Diasoft</title>
+  </head>
+  <body>
+    <script defer>
+      const onLoad = (evt) => {
+        const componentName = evt.target.dataset.name;
+        console.log("Component loaded:", componentName);
+        const element = document.createElement(componentName);
+        document.body.append(element);
+      };
+
+      const onError = (err) => {
+        console.error("Error loading component:", err);
+      };
+
+      const components = ["my-select"];
+
+      components.forEach((component) => {
+        const script = document.createElement("script");
+        script.src = `./${component}.js`;
+        script.dataset.name = component;
+        script.addEventListener("load", onLoad);
+        script.addEventListener("error", onError);
+        document.body.append(script);
+      });
+    </script>
+  </body>
+</html>
