@@ -7,10 +7,24 @@
   </head>
   <body>
     <script defer>
+      const getOptions = (n) => {
+        const arr = [];
+        for (let i = 1; i <= n; i++) {
+          arr.push({textContent: `Option ${i}`, value: `opt${i}`});
+        }
+        return arr;
+      }
       const onLoad = (evt) => {
         const componentName = evt.target.dataset.name;
+        const options = getOptions(3);
         console.log("Component loaded:", componentName);
         const element = document.createElement(componentName);
+        options.forEach((singleOption) => {
+          const option = document.createElement('option');
+          option.textContent = singleOption.textContent;
+          option.value = singleOption.value;
+          element.append(option);
+        });
         document.body.append(element);
       };
 
