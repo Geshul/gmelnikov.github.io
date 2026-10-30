@@ -14,30 +14,50 @@
         }
         return arr;
       }
-      const onLoad = (evt) => {
-        const componentName = evt.target.dataset.name;
-        const options = getOptions(3);
-        console.log("Component loaded:", componentName);
+      const createPanel = (componentName) => {
         const element = document.createElement(componentName);
+        element.setAttribute("data-toggleable", "");
+        const header = document.createElement("h2");
+        header.slot = "header";
+        header.textContent = "Фильтры";
+        element.append(header);
+        document.body.append(element);
+      };
+
+      const createSelect = (componentName) => {
+        const element = document.createElement(componentName);
+        const options = getOptions(10);
         options.forEach((singleOption) => {
-          const option = document.createElement('option');
+          const option = document.createElement("option");
           option.textContent = singleOption.textContent;
           option.value = singleOption.value;
           element.append(option);
         });
-        document.body.append(element);
+        const panel = document.querySelector("my-panel");
+        (panel ?? document.body).append(element);
+      };
+
+      const onLoad = (evt) => {
+        const componentName = evt.target.dataset.name;
+        console.log("Component loaded:", componentName);
+        if (componentName === "my-panel") {
+          createPanel(componentName);
+        } else if (componentName === "my-select") {
+          createSelect(componentName);
+        }
       };
 
       const onError = (err) => {
         console.error("Error loading component:", err);
       };
 
-      const components = ["my-select"];
+      const components = ["my-panel", "my-select"];
 
       components.forEach((component) => {
         const script = document.createElement("script");
         script.src = `./${component}.js`;
         script.dataset.name = component;
+        script.async = false; // Гарантирует выполнение скриптов в порядке добавления
         script.addEventListener("load", onLoad);
         script.addEventListener("error", onError);
         document.body.append(script);
