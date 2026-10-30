@@ -2,18 +2,28 @@ class MySelect extends HTMLElement {
   #shadow;
   #selectButton;
   #selectPopup;
-  #selectPopupSearch;
+  #searchSlot;
   #optionsBox;
   #optionsArray = [];
-    #labelTemplate;
+  #labelTemplate;
+  #selectedValues = new Set();
+
+  value = "";
 
   constructor() {
     super();
     console.log("Hello World");
   }
 
+  #onDocumentClick = (evt) => {
+    if (!evt.composedPath().includes(this)) {
+      this.#closePopup();
+    }
+  };
+
   connectedCallback() {
     // Срабатывает, когда пользовательский элемент впервые добавляется в DOM.
+    document.addEventListener("click", this.#onDocumentClick);
     if (this.#shadow) {
       return;
     }
@@ -23,6 +33,7 @@ class MySelect extends HTMLElement {
 
   disconnectedCallback() {
     // Срабатывает, когда пользовательский элемент удаляется из DOM.
+    document.removeEventListener("click", this.#onDocumentClick);
   }
   adoptedCallback() {
     // Срабатывает, когда пользовательский элемент перемещён в новый документ.
@@ -147,6 +158,16 @@ class MySelect extends HTMLElement {
           border-color: var(--select-border-hover, #94a3b8);
         }
 
+        .select-popup ::slotted(input) {
+          display: block;
+          width: calc(100% - 1rem);
+          margin: 0.5rem;
+          padding: 0.5rem 0.75rem;
+          border: 1px solid var(--select-border-color, #cbd5e1);
+          border-radius: var(--select-radius, 6px);
+          font: inherit;
+        }
+
         .select-popup-options {
           max-height: var(--select-options-max-height, 15rem);
           overflow-y: auto;
@@ -229,25 +250,64 @@ class MySelect extends HTMLElement {
         }
       </style>
       <button class="select-button"><!--Здесь будет выбранная опция--></button>
-      <div class="select-popup"><input class="select-popup-search" placeholder="Search..." /><div class="select-popup-options"><!--Здесь будет список опций--></div></div>`;
+      <div class="select-popup"><slot name="search"><input class="select-popup-search" placeholder="Search..." /></slot><div class="select-popup-options"><!--Здесь будет список опций--></div></div>`;
     this.#shadow.append(template.content.cloneNode(true));
 
     this.#selectButton = this.#shadow.querySelector(".select-button");
     this.#selectPopup = this.#shadow.querySelector(".select-popup");
-    this.#selectPopupSearch = this.#shadow.querySelector(".select-popup-search");
+    this.#searchSlot = this.#shadow.querySelector('slot[name="search"]');
     this.#optionsBox = this.#shadow.querySelector(".select-popup-options");
     this.#labelTemplate = this.#getLabelTemplate();
     this.#optionsArray = this.#getOptionsArray();
+    this.#deleteOptions();
     this.#renderOptions();
 
-    this.#selectButton.addEventListener("click", () => this.#openPopup());
+    this.#selectButton.addEventListener("click", () => this.#togglePopup());
+    this.addEventListener("input", (evt) => {
+      const searchInput = this.#getSearchInput();
+      if (evt.composedPath().includes(searchInput)) {
+        this.#renderOptions(searchInput.value);
+      }
+    });
+    this.#optionsBox.addEventListener("change", (evt) => this.#onOptionChange(evt));
   }
 
-  #openPopup() {
+  #togglePopup() {
     const isOpen = this.#selectPopup.classList.toggle("open");
     this.toggleAttribute("open", isOpen);
   }
 
+  #closePopup() {
+    this.#selectPopup.classList.remove("open");
+    this.removeAttribute("open");
+  }
+
+  #getSearchInput() {
+    const [slotted] = this.#searchSlot.assignedElements();
+    return slotted ? slotted.querySelector("input") : this.#searchSlot.querySelector("input");
+  }
+
+  #onOptionChange(evt) {
+    const checkbox = evt.target;
+    const value = checkbox.closest("label").dataset.value;
+    if (checkbox.checked) {
+      this.#selectedValues.add(value);
+    } else {
+      this.#selectedValues.delete(value);
+    }
+    this.value = this.#optionsArray
+      .map((option) => Object.keys(option)[0])
+      .filter((key) => this.#selectedValues.has(key))
+      .join(",");
+    this.#updateButton();
+  }
+
+  #updateButton() {
+    this.#selectButton.textContent = this.#optionsArray
+      .filter((option) => this.#selectedValues.has(Object.keys(option)[0]))
+      .map((option) => Object.values(option)[0])
+      .join(", ");
+  }
 
   #getLabelTemplate() {
     const labelTemplate = document.createElement("template");
@@ -255,16 +315,20 @@ class MySelect extends HTMLElement {
     return labelTemplate;
   }
 
-  #renderOptions() {
-    this.#deleteOptions();
-    this.#optionsArray.forEach((option) => {
-      const key = Object.keys(option)[0];
-      const labelTemplate = this.#labelTemplate.content.cloneNode(true);
-      const label = labelTemplate.querySelector('label');
-      label.dataset.value = key;
-      label.append(option[key])
-      this.#optionsBox.append(label);
-    });
+  #renderOptions(filterText = "") {
+    const search = filterText.trim().toLowerCase();
+    this.#optionsBox.replaceChildren();
+    this.#optionsArray
+      .filter((option) => Object.values(option)[0].toLowerCase().includes(search))
+      .forEach((option) => {
+        const key = Object.keys(option)[0];
+        const labelTemplate = this.#labelTemplate.content.cloneNode(true);
+        const label = labelTemplate.querySelector('label');
+        label.dataset.value = key;
+        label.append(option[key]);
+        label.querySelector("input").checked = this.#selectedValues.has(key);
+        this.#optionsBox.append(label);
+      });
   }
 
   #deleteOptions() {

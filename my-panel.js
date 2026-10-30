@@ -2,10 +2,6 @@ class MyPanel extends HTMLElement {
   #shadow;
   #panelHeader;
 
-  constructor() {
-    super();
-  }
-
   connectedCallback() {
     // Срабатывает, когда пользовательский элемент впервые добавляется в DOM.
     if (this.#shadow) {
@@ -63,14 +59,12 @@ class MyPanel extends HTMLElement {
           background: var(--panel-header-background, #f8fafc);
           color: var(--panel-header-color, #1e293b);
         }
-        /* Fallback-контент слота живёт в Shadow DOM — стилизуется обычными селекторами */
         .panel-header h2 {
           margin: 0;
           font-size: var(--panel-header-font-size, 1.125rem);
           font-weight: 600;
           line-height: 1.5;
         }
-        /* Спроецированный контент остаётся в Light DOM — стилизуется через ::slotted() */
         .panel-header ::slotted(*) {
           margin: 0;
           font-size: var(--panel-header-font-size, 1.125rem);
@@ -129,7 +123,7 @@ class MyPanel extends HTMLElement {
           <span class="panel-toggle-icon"></span>
         </header>
         <div class="panel-body">
-          <slot><!-- Сюда проецируется контент панели --></slot>
+          <slot></slot>
         </div>
       </section>`;
     this.#shadow.append(template.content.cloneNode(true));
