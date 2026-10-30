@@ -4,6 +4,22 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>JS Diasoft</title>
+    <style>
+      .light-find-box {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #94a3b8;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #334155;
+      }
+      .light-find-box::placeholder {
+        color: #64748b;
+      }
+      .light-find-box:focus {
+        outline: 1px solid #3b82f6;
+        outline-offset: -1px;
+      }
+    </style>
   </head>
   <body>
     <script defer>
@@ -14,30 +30,57 @@
         }
         return arr;
       }
-      const onLoad = (evt) => {
-        const componentName = evt.target.dataset.name;
-        const options = getOptions(3);
-        console.log("Component loaded:", componentName);
+      const createPanel = (componentName) => {
         const element = document.createElement(componentName);
+        element.setAttribute("data-toggleable", "");
+        const header = document.createElement("h2");
+        header.slot = "header";
+        header.textContent = "Filters";
+        element.append(header);
+        document.body.append(element);
+      };
+
+      const createSelect = (componentName) => {
+        const element = document.createElement(componentName);
+        const search = document.createElement("div");
+        search.slot = "search";
+        const input = document.createElement("input");
+        input.className = "light-find-box";
+        input.placeholder = "Search...";
+        search.append(input);
+        element.append(search);
+        const options = getOptions(10);
         options.forEach((singleOption) => {
-          const option = document.createElement('option');
+          const option = document.createElement("option");
           option.textContent = singleOption.textContent;
           option.value = singleOption.value;
           element.append(option);
         });
-        document.body.append(element);
+        const panel = document.querySelector("my-panel");
+        panel.append(element);
+      };
+
+      const onLoad = (evt) => {
+        const componentName = evt.target.dataset.name;
+        console.log("Component loaded:", componentName);
+        if (componentName === "my-panel") {
+          createPanel(componentName);
+        } else if (componentName === "my-select") {
+          createSelect(componentName);
+        }
       };
 
       const onError = (err) => {
         console.error("Error loading component:", err);
       };
 
-      const components = ["my-select"];
+      const components = ["my-panel", "my-select"];
 
       components.forEach((component) => {
         const script = document.createElement("script");
         script.src = `./${component}.js`;
         script.dataset.name = component;
+        script.async = false;
         script.addEventListener("load", onLoad);
         script.addEventListener("error", onError);
         document.body.append(script);
